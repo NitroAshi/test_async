@@ -12,7 +12,7 @@ use std::io::BufReader;
 
 pub fn read_file(filename: &str) -> Result<Box<dyn BufRead>, std::io::Error> {
     let file = File::open(filename)?;
-    let reader: Box<dyn BufRead> = match filename.ends_with(".gz") {
+    let reader: Box<dyn BufRead> = match filename.ends_with(".out.gz") {
         false => Box::new(BufReader::new(file)),
         true => Box::new(BufReader::new(GzDecoder::new(file))),
     };
