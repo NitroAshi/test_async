@@ -71,7 +71,7 @@ pub async fn process_logs(paths: Vec<String>) -> Vec<String> {
 
             let mut lines = reader.lines();
             while let Some(line) = lines.next_line().await.unwrap() {
-                if line.contains("cpu-info") {
+                if line.starts_with("PV-INFO: siteid") {
                     tx.send(format!("{}", line)).await.unwrap();
                     break;
                 }   
