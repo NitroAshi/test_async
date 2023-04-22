@@ -66,7 +66,7 @@ impl LogSubject {
         }
     }
 
-    pub async fn process_log(&self, filename: &str) {
+    pub async fn process_log(&self, filename: &str, tx: mpsc::Sender<String>) {
         let reader = read_file(filename).await.unwrap();
         // iterator
         let mut lines = reader.lines();
