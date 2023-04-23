@@ -71,10 +71,47 @@ impl LogSubject {
         // iterator
         let mut lines = reader.lines();
         while let Some(line) = lines.next_line().await.unwrap() {
-                //if line.starts_with("cpu-info") {
-                //    tx.send(format!("{}", &line)).await.unwrap();
-                //    break;
-                //}
+            self.notify(&line);            
+            //tx.send(format!("{}", &line)).await.unwrap();                
+            //if line.starts_with("cpu-info") {
+            //    tx.send(format!("{}", &line)).await.unwrap();
+            //    break;
+            //}
         }
     }
 }
+
+
+
+
+pub trait LogObserver {
+    fn update(&self, line: &str);
+}
+
+// Observers
+//
+// RunningInfo
+pub struct RunningInfo {
+    //max_memory: u32,
+    //elapsed_time: u32,
+}
+
+impl LogObserver for RunningInfo {
+    fn update(&self, line: &str) {
+        if line.starts_with("Maximum memory usage for this session including child processes:") {
+            if let Some(result) = line.split_whitespace().rev().nth(1) {
+                let result = result.parse::<f32>().unwrap() as u32;
+                println!("max_memory -> {}", result);
+            }
+        }
+        if line.starts_with("Elapsed time for this session:") {
+            if let Some(result) = line.split_whitespace().rev().nth(4) {
+                let result = result.parse::<u32>().unwrap();
+                println!("elapsed_time -> {}", result);
+            }
+        }
+    }
+}
+
+
+
