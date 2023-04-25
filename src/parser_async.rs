@@ -4,6 +4,7 @@ use tokio::sync::mpsc;
 //use flate2::read::GzDecoder;
 use async_compression::tokio::bufread::GzipDecoder;
 use std::pin::Pin;
+use async_trait::async_trait;
 
 pub async fn read_file(filename: &str) -> Result<Pin<Box<dyn AsyncBufRead + Send>>, std::io::Error> {
     let file = File::open(filename).await?;
@@ -60,9 +61,9 @@ impl LogSubject {
         self.observers.push(observer);
     }
 
-    fn notify(&self, line: &str) {
+    async fn notify(&self, line: &str, tx: mpsc::Sender<String>) {
         for observer in self.observers.iter() {
-            observer.update(line);
+            observer.update(line, tx);
         }
     }
 
@@ -71,7 +72,7 @@ impl LogSubject {
         // iterator
         let mut lines = reader.lines();
         while let Some(line) = lines.next_line().await.unwrap() {
-            self.notify(&line);            
+            self.notify(&line, tx);            
             //tx.send(format!("{}", &line)).await.unwrap();                
             //if line.starts_with("cpu-info") {
             //    tx.send(format!("{}", &line)).await.unwrap();
@@ -83,9 +84,9 @@ impl LogSubject {
 
 
 
-
+#[async_trait]
 pub trait LogObserver {
-    fn update(&self, line: &str);
+    async fn update(&self, line: &str, tx: mpsc::Sender<String>);
 }
 
 // Observers
@@ -96,18 +97,23 @@ pub struct RunningInfo {
     //elapsed_time: u32,
 }
 
+#[async_trait]
 impl LogObserver for RunningInfo {
-    fn update(&self, line: &str) {
+    async fn update(&self, line: &str, tx: mpsc::Sender<String>) {
         if line.starts_with("Maximum memory usage for this session including child processes:") {
             if let Some(result) = line.split_whitespace().rev().nth(1) {
                 let result = result.parse::<f32>().unwrap() as u32;
-                println!("max_memory -> {}", result);
+                //println!("max_memory -> {}", result);
+                let message = format!("max_memory -> {}", result);
+                tx.send(message).await.unwrap();
             }
         }
         if line.starts_with("Elapsed time for this session:") {
             if let Some(result) = line.split_whitespace().rev().nth(4) {
                 let result = result.parse::<u32>().unwrap();
-                println!("elapsed_time -> {}", result);
+                //println!("elapsed_time -> {}", result);
+                let message = format!("elapsed_time -> {}", result);
+                tx.send(message).await.unwrap();
             }
         }
     }

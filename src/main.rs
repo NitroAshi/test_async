@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for log in logs_pool {
         let tx = tx.clone();
         tokio::spawn( async move {
-            subject.process_log(&log);
+            subject.process_log(&log, tx);
         });
     }
 
